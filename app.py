@@ -86,7 +86,7 @@ def read_word_document(file_buffer):
     if current_question and answer_lines:
         data.append((current_question, '\n'.join(answer_lines)))
 
-    data = [(q, a) for q, a if q and a]
+    data = [(q, a) for q, a in data if q and a]
 
     return data
 
@@ -233,8 +233,8 @@ if st.session_state.get('key_confirmed', False):
             st.write(matter_pyramid + "\n\n" + output['output'])
         else:
             if not uploaded_file:
-                st.error(f"Please upload one docx document.")
+                st.error("Please upload one docx document.")
             if not BRAND_NAME:
-                st.error(f"Please enter the brand name.")
+                st.error("Please enter the brand name.")
             if not INDUSTRY:
-                st.error(f"Please enter the industry of your brand.")
+                st.error("Please enter the industry of your brand.")
