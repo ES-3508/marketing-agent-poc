@@ -42,4 +42,36 @@ if openai_key:
             """
 
             marketing_strategy_template = f"""
-            You are a brand called '{BRAND_NAME}', focusing on innovation and leadership within the '{INDUSTRY}' sector. Based on the provided answers
+            You are a brand called '{BRAND_NAME}', focusing on innovation and leadership within the '{INDUSTRY}' sector. Based on the provided answers, generate a comprehensive marketing strategy and campaign that includes:
+
+            1. **Brand Insights**: Deeply analyze the market dilemma, solutions, product offerings, and credibility. Identify the core opportunities the brand aims to capture and how it differentiates itself in addressing customer needs.
+
+            2. **Competitor Analysis**: Examine the main competitors, their strengths, weaknesses, and market positions. Highlight the competitive advantage based on this analysis.
+
+            3. **Target Audience**: Define the primary and secondary target audiences based on the provided demographics and psychographics. Outline strategies for engaging these audiences.
+
+            4. **Marketing Strategy**:
+                - **Brand Positioning**: Summarize the market position and unique value proposition.
+                - **Engagement Channels**: Identify the most effective channels for reaching the target audience, considering both digital and traditional platforms.
+                - **Content and Messaging**: Suggest key messages that resonate with the brand promise and audience's expectations.
+
+            5. **Campaign Concept**: Propose a campaign that embodies the strategic goals, including creative titles, objectives, key activities, and expected outcomes.
+
+            6. **Implementation Plan**: Outline steps for executing the marketing strategy and campaign, including timelines and key milestones.
+
+            7. **Evaluation Metrics**: Specify how to measure the success of the marketing strategy and campaign, focusing on KPIs related to audience engagement, brand awareness, and sales performance.
+            """
+
+            # Make an API call to OpenAI to generate the marketing strategy
+            response = openai.Completion.create(
+                engine="text-davinci-003",
+                prompt=marketing_strategy_template,
+                max_tokens=1024,
+                n=1,
+                stop=None,
+                temperature=0.7,
+            )
+
+            marketing_strategy = response.choices[0].text.strip()
+            st.subheader('Generated Marketing Strategy and Campaign')
+            st.write(marketing_strategy)
