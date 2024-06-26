@@ -28,14 +28,19 @@ if st.button('Confirm API Key'):
         st.error("Please enter the OpenAI key to proceed.")
 
 if st.session_state.get('key_confirmed', False):
-    BRAND_NAME = st.text_input("Enter your Brand Name")
-    INDUSTRY = st.text_input("Enter your Industry")
+    BRAND_NAME = st.text_input("Enter your Brand Name", value="Eco-Friendly Cleaning")
+    INDUSTRY = st.text_input("Enter your Industry", value="Cleaning Products")
 
-    question_1 = st.text_input("1. What is the Dilemma? What is the opportunity out there? What is the gap that be filled?")
-    question_2 = st.text_input("2. How will your brand solve the Dilemma? What does the brand promise the consumer?")
-    question_3 = st.text_input("3. What products/service do you offer to solve this?")
-    question_4 = st.text_input("4. Why should people believe it? What makes you credible?")
-    question_5 = st.text_input("5. What are the trends in the category that inspired you?")
+    question_1 = st.text_input("1. What is the Dilemma? What is the opportunity out there? What is the gap that be filled?",
+                               value="The market lacks effective, eco-friendly cleaning products that are affordable and easily accessible.")
+    question_2 = st.text_input("2. How will your brand solve the Dilemma? What does the brand promise the consumer?",
+                               value="Our brand offers high-quality, eco-friendly cleaning products at competitive prices, ensuring both effectiveness and environmental responsibility.")
+    question_3 = st.text_input("3. What products/service do you offer to solve this?",
+                               value="We offer a range of cleaning products including all-purpose cleaners, floor cleaners, and specialized cleaners for kitchens and bathrooms.")
+    question_4 = st.text_input("4. Why should people believe it? What makes you credible?",
+                               value="Our products are certified by leading environmental organizations, and we have received positive reviews from satisfied customers.")
+    question_5 = st.text_input("5. What are the trends in the category that inspired you?",
+                               value="There is a growing trend towards sustainable living and the use of eco-friendly products as consumers become more environmentally conscious.")
 
     if st.button('Generate Marketing Strategy and Campaign'):
         if BRAND_NAME and INDUSTRY and question_1 and question_2 and question_3 and question_4 and question_5:
@@ -93,14 +98,8 @@ if st.session_state.get('key_confirmed', False):
             Generate the marketing strategy and campaign in a cohesive narrative format."""
 
             main_model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.05, max_tokens=3000, streaming=False)
-            response = main_model.generate(
-                PromptTemplate(
-                    template=marketing_strategy_template,
-                    input_variables=["context"]
-                ),
-                context=questionaire_report
-            )
+            response = main_model({"context": questionaire_report, "template": marketing_strategy_template})
 
-            st.write(response)
+            st.write(response["choices"][0]["message"]["content"])
         else:
             st.error("Please fill out all the fields.")
