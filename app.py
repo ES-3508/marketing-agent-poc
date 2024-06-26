@@ -1,9 +1,5 @@
 import streamlit as st
-from docx import Document as DocxDocument
-import io
-import os
 import openai
-
 from langchain_openai import ChatOpenAI
 from langchain.chains import RetrievalQA
 from langchain_openai import OpenAIEmbeddings
@@ -11,86 +7,15 @@ from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import PromptTemplate
 from langchain.schema import Document
 
-
 # Define the CSS to inject
 def local_css(file_name):
     with open(file_name) as f:
         st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 
-def read_word_document(file_buffer):
-    doc = DocxDocument(io.BytesIO(file_buffer.getvalue()))
-    data = []
-    current_question = None
-    answer_lines = []
-
-    paragraphs = [p.text for p in doc.paragraphs]
-
-    questions = [
-        "What is the Dilemma? What is the opportunity out there? What is the gap that be filled?",
-        "How will your brand solve the Dilemma? What does the brand promise the consumer?",
-        "What products/service do you offer to solve this?",
-        "Why should people believe it? What makes you credible?",
-        "What are the trends in the category that inspired you?",
-        "Who inspires you in this or similar categories? Please list their website domains",
-        "Who are your main competitors (list 3-5)? What is their strength, weakness and competitive edge? Please list their website domain",
-        "What are the demographics/psychographics of your audience?",
-        "Who are the audience that define/personify your brand the most? Who will readily buy the brand (early adopters)?",
-        "Who are the audience that would never personify your brand?",
-        "Who would represent/endorse your brand? Describe why?",
-        "What are their pain/desires? What do they need out of the category?",
-        "Who do you want to convince into buying your brand?",
-        "How can we best reach them (main channels)?",
-        "What is your brand purpose & values?",
-        "What do you want people to say about your brand? What is the aspired brand personality? Which words do you want to own?",
-        "Which traits will never define your brand?",
-        "Is there any word, image, phrase or story that reflects what the brand stands for?",
-        "Is there anything else you’d like to add?",
-        "What are you expecting out of this branding exercise?",
-        "List all your products/services/special features and the respective grouping if relevant.",
-        "List any additions or extensions to your product/service that you might introduce in the future.",
-    ]
-    headers = [
-        "The Brand Proposition",
-        "The Category",
-        "The Competition",
-        "The Brand Purpose & Perception",
-    ]
-
-    def is_question(paragraph):
-        return any(paragraph.strip() == q for q in questions)
-
-    def is_header(paragraph):
-        return any(paragraph.strip() == h for h in headers)
-
-    for i in range(len(paragraphs)):
-        paragraph_text = paragraphs[i].strip()
-        next_paragraph_text = paragraphs[i + 1].strip() if i + 1 < len(paragraphs) else ""
-
-        if is_question(paragraph_text) or (
-                current_question and is_question(paragraph_text + " " + next_paragraph_text)):
-            if current_question:
-                data.append((current_question, '\n'.join(answer_lines)))
-                answer_lines = []
-            current_question = paragraph_text
-            if next_paragraph_text and not is_question(next_paragraph_text) and not is_header(next_paragraph_text):
-                current_question += " " + next_paragraph_text
-        elif current_question and not is_header(paragraph_text):
-            if paragraph_text not in current_question:
-                answer_lines.append(paragraph_text)
-
-    if current_question and answer_lines:
-        data.append((current_question, '\n'.join(answer_lines)))
-
-    data = [(q, a) for q, a in data if q and a]
-
-    return data
-
-
 st.title('Marketing Strategy and Campaign Generator')
 
 openai_key = st.text_input("Enter your OpenAI API Key", type="password")
-splitted_documents = []
 if st.button('Confirm API Key'):
     if openai_key:
         st.session_state['openai_key'] = openai_key
@@ -102,18 +27,24 @@ if st.button('Confirm API Key'):
         st.error("Please enter the OpenAI key to proceed.")
 
 if st.session_state.get('key_confirmed', False):
-    uploaded_file = st.file_uploader("Choose a Word file", type=["docx"])
     BRAND_NAME = st.text_input("Enter your Brand Name")
     INDUSTRY = st.text_input("Enter your Industry")
 
-    if st.button('Generate Marketing Strategy and Campaign'):
-        if uploaded_file and BRAND_NAME and INDUSTRY:
-            document_content = read_word_document(uploaded_file)
+    question_1 = st.text_input("1. What is the Dilemma? What is the opportunity out there? What is the gap that be filled?")
+    question_2 = st.text_input("2. How will your brand solve the Dilemma? What does the brand promise the consumer?")
+    question_3 = st.text_input("3. What products/service do you offer to solve this?")
+    question_4 = st.text_input("4. Why should people believe it? What makes you credible?")
+    question_5 = st.text_input("5. What are the trends in the category that inspired you?")
 
-            for i, (question, answer) in enumerate(document_content):
-                doc_id = f"doc_{i}"
-                splitted_documents.append(
-                    Document(page_content=question + "\n" + answer + "\n\n", metadata={"id": doc_id}))
+    if st.button('Generate Marketing Strategy and Campaign'):
+        if BRAND_NAME and INDUSTRY and question_1 and question_2 and question_3 and question_4 and question_5:
+            splitted_documents = [
+                Document(page_content=question_1, metadata={"id": "q1"}),
+                Document(page_content=question_2, metadata={"id": "q2"}),
+                Document(page_content=question_3, metadata={"id": "q3"}),
+                Document(page_content=question_4, metadata={"id": "q4"}),
+                Document(page_content=question_5, metadata={"id": "q5"}),
+            ]
 
             turbo = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0.0, max_tokens=4000, streaming=False)
 
@@ -138,9 +69,12 @@ if st.session_state.get('key_confirmed', False):
             )
 
             questionaire_report = ""
-            with st.spinner('Reading uploaded document...'):
-                for i, q_a in enumerate(document_content):
-                    questionaire_report += f"Q{i + 1}- " + q_a[0] + "\n" + marketing_qa.invoke(q_a[0])['result'] + "\n\n"
+            with st.spinner('Processing your answers...'):
+                questionaire_report += "Q1- " + question_1 + "\n" + marketing_qa.invoke(question_1)['result'] + "\n\n"
+                questionaire_report += "Q2- " + question_2 + "\n" + marketing_qa.invoke(question_2)['result'] + "\n\n"
+                questionaire_report += "Q3- " + question_3 + "\n" + marketing_qa.invoke(question_3)['result'] + "\n\n"
+                questionaire_report += "Q4- " + question_4 + "\n" + marketing_qa.invoke(question_4)['result'] + "\n\n"
+                questionaire_report += "Q5- " + question_5 + "\n" + marketing_qa.invoke(question_5)['result'] + "\n\n"
 
             marketing_strategy_template = f"""You are a brand called '{BRAND_NAME}', focusing on innovation and leadership within the '{INDUSTRY}' sector. Based on the provided answers to the questionnaire, generate a detailed marketing strategy and campaign.
 
@@ -158,15 +92,14 @@ if st.session_state.get('key_confirmed', False):
             Generate the marketing strategy and campaign in a cohesive narrative format."""
 
             main_model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.05, max_tokens=3000, streaming=False)
-            prompt = PromptTemplate(template=marketing_strategy_template, input_variables=["context"])
+            response = main_model.generate(
+                PromptTemplate(
+                    template=marketing_strategy_template,
+                    input_variables=["context"]
+                ),
+                context=questionaire_report
+            )
 
-            response = main_model({ "context": questionaire_report, "template": prompt.template })
-
-            st.write(response)
+            st.write(response.choices[0].text)
         else:
-            if not uploaded_file:
-                st.error("Please upload one docx document.")
-            if not BRAND_NAME:
-                st.error("Please enter the brand name.")
-            if not INDUSTRY:
-                st.error("Please enter the industry of your brand.")
+            st.error("Please fill out all the fields.")
