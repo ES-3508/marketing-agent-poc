@@ -66,8 +66,8 @@ def read_word_document(file_buffer):
     def is_header(paragraph):
         return any(paragraph.strip() == h for h in headers)
 
-    for i, paragraph in enumerate(paragraphs):
-        paragraph_text = paragraph.strip()
+    for i in range(len(paragraphs)):
+        paragraph_text = paragraphs[i].strip()
         next_paragraph_text = paragraphs[i + 1].strip() if i + 1 < len(paragraphs) else ""
 
         if is_question(paragraph_text) or (
@@ -81,12 +81,12 @@ def read_word_document(file_buffer):
                 i += 1
         elif current_question and not is_header(paragraph_text):
             if paragraph_text not in current_question:
-                answer_lines.append(paragraph.strip())
+                answer_lines.append(paragraph_text)
 
     if current_question and answer_lines:
         data.append((current_question, '\n'.join(answer_lines)))
 
-    data = [(q, a) for q, a in data if q and a]
+    data = [(q, a) for q, a if q and a]
 
     return data
 
