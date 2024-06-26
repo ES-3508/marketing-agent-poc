@@ -1,5 +1,6 @@
 import streamlit as st
 import openai
+import os
 from langchain_openai import ChatOpenAI
 from langchain.chains import RetrievalQA
 from langchain_openai import OpenAIEmbeddings
@@ -100,6 +101,6 @@ if st.session_state.get('key_confirmed', False):
                 context=questionaire_report
             )
 
-            st.write(response.choices[0].text)
+            st.write(response)
         else:
             st.error("Please fill out all the fields.")
