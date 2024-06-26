@@ -67,15 +67,16 @@ if openai_key:
             """
 
             # Make an API call to OpenAI to generate the marketing strategy
-            response = openai.Completion.create(
-                engine="text-davinci-003",
-                prompt=marketing_strategy_template,
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a marketing assistant."},
+                    {"role": "user", "content": marketing_strategy_template}
+                ],
                 max_tokens=1024,
-                n=1,
-                stop=None,
                 temperature=0.7,
             )
 
-            marketing_strategy = response.choices[0].text.strip()
+            marketing_strategy = response.choices[0].message['content'].strip()
             st.subheader('Generated Marketing Strategy and Campaign')
             st.write(marketing_strategy)
