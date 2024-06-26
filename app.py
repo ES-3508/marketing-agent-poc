@@ -76,11 +76,11 @@ if st.session_state.get('key_confirmed', False):
 
             questionaire_report = ""
             with st.spinner('Processing your answers...'):
-                questionaire_report += "Q1- " + question_1 + "\n" + marketing_qa.invoke(question_1)['result'] + "\n\n"
-                questionaire_report += "Q2- " + question_2 + "\n" + marketing_qa.invoke(question_2)['result'] + "\n\n"
-                questionaire_report += "Q3- " + question_3 + "\n" + marketing_qa.invoke(question_3)['result'] + "\n\n"
-                questionaire_report += "Q4- " + question_4 + "\n" + marketing_qa.invoke(question_4)['result'] + "\n\n"
-                questionaire_report += "Q5- " + question_5 + "\n" + marketing_qa.invoke(question_5)['result'] + "\n\n"
+                questionaire_report += "Q1- " + question_1 + "\n" + marketing_qa({"query": question_1})['result'] + "\n\n"
+                questionaire_report += "Q2- " + question_2 + "\n" + marketing_qa({"query": question_2})['result'] + "\n\n"
+                questionaire_report += "Q3- " + question_3 + "\n" + marketing_qa({"query": question_3})['result'] + "\n\n"
+                questionaire_report += "Q4- " + question_4 + "\n" + marketing_qa({"query": question_4})['result'] + "\n\n"
+                questionaire_report += "Q5- " + question_5 + "\n" + marketing_qa({"query": question_5})['result'] + "\n\n"
 
             marketing_strategy_template = f"""You are a brand called '{BRAND_NAME}', focusing on innovation and leadership within the '{INDUSTRY}' sector. Based on the provided answers to the questionnaire, generate a detailed marketing strategy and campaign.
 
@@ -97,8 +97,12 @@ if st.session_state.get('key_confirmed', False):
 
             Generate the marketing strategy and campaign in a cohesive narrative format."""
 
-            main_model = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.05, max_tokens=3000, streaming=False)
-            response = main_model({"context": questionaire_report, "template": marketing_strategy_template})
+            messages = [
+                {"role": "system", "content": marketing_strategy_template},
+                {"role": "user", "content": questionaire_report}
+            ]
+
+            response = turbo.chat(messages)
 
             st.write(response["choices"][0]["message"]["content"])
         else:
