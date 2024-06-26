@@ -1,12 +1,6 @@
 import streamlit as st
 import openai
 import os
-from langchain_openai import ChatOpenAI
-from langchain.chains import RetrievalQA
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
-from langchain_core.prompts import PromptTemplate
-from langchain.schema import Document
 
 # Define the CSS to inject
 def local_css(file_name):
@@ -44,45 +38,16 @@ if st.session_state.get('key_confirmed', False):
 
     if st.button('Generate Marketing Strategy and Campaign'):
         if BRAND_NAME and INDUSTRY and question_1 and question_2 and question_3 and question_4 and question_5:
-            splitted_documents = [
-                Document(page_content=question_1, metadata={"id": "q1"}),
-                Document(page_content=question_2, metadata={"id": "q2"}),
-                Document(page_content=question_3, metadata={"id": "q3"}),
-                Document(page_content=question_4, metadata={"id": "q4"}),
-                Document(page_content=question_5, metadata={"id": "q5"}),
-            ]
+            questionnaire_report = f"""
+            Q1: {question_1}
+            Q2: {question_2}
+            Q3: {question_3}
+            Q4: {question_4}
+            Q5: {question_5}
+            """
 
-            turbo = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0.0, max_tokens=4000, streaming=False)
-
-            embeddings = OpenAIEmbeddings(chunk_size=500)
-            marketing_retriever = Chroma.from_documents(splitted_documents, embeddings, collection_name="brand")
-            marketing_qa_template = """ the user is a marketing agent and he needs answers to some questions about your brand, the questions, and answers in the below context, so provide the answer to his question from the below context as it is in an accurate way, and don't make up answers or add info to the context answer from your mind.
-
-            ===========================
-
-            {context}
-
-            Question: {question}"""
-
-            MARKETING_PROMPT = PromptTemplate(
-                template=marketing_qa_template, input_variables=["context", "question"]
-            )
-            marketing_qa = RetrievalQA.from_chain_type(
-                llm=turbo,
-                chain_type="stuff",
-                retriever=marketing_retriever.as_retriever(search_kwargs={'k': 1}),
-                chain_type_kwargs={"prompt": MARKETING_PROMPT, 'verbose': False},
-            )
-
-            questionaire_report = ""
-            with st.spinner('Processing your answers...'):
-                questionaire_report += "Q1- " + question_1 + "\n" + marketing_qa({"query": question_1})['result'] + "\n\n"
-                questionaire_report += "Q2- " + question_2 + "\n" + marketing_qa({"query": question_2})['result'] + "\n\n"
-                questionaire_report += "Q3- " + question_3 + "\n" + marketing_qa({"query": question_3})['result'] + "\n\n"
-                questionaire_report += "Q4- " + question_4 + "\n" + marketing_qa({"query": question_4})['result'] + "\n\n"
-                questionaire_report += "Q5- " + question_5 + "\n" + marketing_qa({"query": question_5})['result'] + "\n\n"
-
-            marketing_strategy_template = f"""You are a brand called '{BRAND_NAME}', focusing on innovation and leadership within the '{INDUSTRY}' sector. Based on the provided answers to the questionnaire, generate a detailed marketing strategy and campaign.
+            marketing_strategy_template = f"""
+            You are a brand called '{BRAND_NAME}', focusing on innovation and leadership within the '{INDUSTRY}' sector. Based on the provided answers to the questionnaire, generate a detailed marketing strategy and campaign.
 
             1. **Brand Insights**: Analyze the market dilemma, solutions, product offerings, and credibility. Identify core opportunities and how the brand differentiates itself.
             2. **Competitor Analysis**: Examine main competitors, their strengths, weaknesses, and market positions. Highlight the brand's competitive advantage.
@@ -95,15 +60,17 @@ if st.session_state.get('key_confirmed', False):
             6. **Implementation Plan**: Outline steps for executing the marketing strategy and campaign, including timelines and key milestones.
             7. **Evaluation Metrics**: Specify how to measure the success of the marketing strategy and campaign.
 
-            Generate the marketing strategy and campaign in a cohesive narrative format."""
+            Generate the marketing strategy and campaign in a cohesive narrative format.
+            """
 
-            messages = [
-                {"role": "system", "content": marketing_strategy_template},
-                {"role": "user", "content": questionaire_report}
-            ]
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": marketing_strategy_template},
+                    {"role": "user", "content": questionnaire_report}
+                ]
+            )
 
-            response = turbo.chat(messages)
-
-            st.write(response["choices"][0]["message"]["content"])
+            st.write(response['choices'][0]['message']['content'])
         else:
             st.error("Please fill out all the fields.")
